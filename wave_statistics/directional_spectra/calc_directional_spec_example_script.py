@@ -156,8 +156,6 @@ elif pick == False:
     stdxt = np.empty([itnum])
     stdyt = np.empty([itnum])
     for i in range(itnum):
-        # stdx = 0
-        # stdy = 0
         while True:
             loc2calc = random.sample(range(0, dpxyz.shape[1]), instnum)
             dploc = dpxyz.iloc[:,loc2calc]
@@ -167,16 +165,13 @@ elif pick == False:
             stdx = np.std(XYZ[0,:])
             stdy = np.std(XYZ[1,:])
             stdxt[i] = np.std(XYZ[0,:])
-            # X[i,:] = XYZ[0,:]
             stdyt[i] = np.std(XYZ[1,:])
-            # Y[i,:] = XYZ[1,:]
+            # code will select a new set of locations if less than or more than a specified standard deviation
             if stdx > 1.3 and stdx < 2 and stdy > 3 and stdy < 7:
                 break
         df = dfall.iloc[:,loc2calc]
         [SMout,EPout] = calc_SM(Tinfo,inst,df,XYZ)
-        # Ssum = Ssum + SMout['S'].real
         Ssum[:,:,i] = SMout['S'].real
-    # SMout['S'] = Ssum/itnum
     SMavg = dict()
     Savg = Ssum.mean(axis=2)
     SMavg['S'] = Savg
@@ -201,55 +196,21 @@ sprdmean = dict()
 dirmean = calc_energy_weighted_mean(SMcam_sz['th_2'], SMcam_sz['freqs'], freqrange)
 sprdmean = calc_energy_weighted_mean(SMcam_sz['sig_2'], SMcam_sz['freqs'], freqrange)
 
-# %% lidar
-
-# lidarpath = '/Users/cmbaker9/Documents/Research/Lab_Experiments/data/processed/conditions/' + conditions + '/' + Tinfo['clpath'] + '/time_' + Tinfo['timesection'] + '/'
-# fpath = lidarpath + 'lidar_array_xy.csv'
-# dpxyz = pd.read_csv(fpath, header='infer')#, names=['x', 'y'])
-# # dpxyz.append(np.zeros((1,12))+Tinfo['h'],ignore_index=True)
-# XYZ = dpxyz.values
-# z = np.zeros((1,12))+Tinfo['h']
-# XYZ = np.vstack([XYZ, z])
-
-
-# fpath = campath + 'lidar_array_timeseries.csv'
-# # df = pd.read_csv(fpath, header=None, names=['z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7', 'z8', 'z9', 'z10', 'z11', 'z12'])
-# df = pd.read_csv(fpath, header='infer')#, names=['z1', 'z10', 'z11', 'z12', 'z2', 'z3','z4', 'z5', 'z6', 'z7', 'z8', 'z9'])
-# df = df.interpolate(method='linear', limit_direction='both')#, axis='columns')
-# dfin = df
-
-# inst = 'lid'
-# [SMout,EPout] = calc_SM(Tinfo,inst,df,XYZ)
-# exec('SM' + inst + '_' + Tinfo['parray'] + '= SMout')
-
 # %% Plots
 
 fsmall        = np.arange(1,3,0.01)
 fsmall4       = (10**-2.5)*(fsmall**-4)
 
 fig, axs = plt.subplots(2,figsize=(8,7))
-# axs[0].plot(SMwg_sz['freqs'],SMwg_sz['Sf'], c='k', lw=1, label='wg sz')
-# # axs[0].plot(SMwg_is['freqs'],SMwg_is['Sf'], c='k', lw=1, linestyle='-.', label='wg is')
-# axs[0].plot(SMpress_sz['freqs'],SMpress_sz['Sf'], c='r', lw=1, label='press sz')
-# axs[0].plot(SMpress_is['freqs'],SMpress_is['Sf'], c='r', lw=1, linestyle='-.', label='press is')
 axs[0].plot(SMcam_sz['freqs'],SMcam_sz['Sf'], c='b', lw=1, label='cam sz')
-# axs[0].plot(SMlid_sz['freqs'],SMlid_sz['Sf'], c='g', lw=1, label='lidar sz')
 axs[0].plot(fsmall,fsmall4, c='m', lw=1, label=r'$f^{-4}$')
 axs[0].set_xlim(SMcam_sz['freqs'].min(),2.5)
 axs[0].set_yscale('log')
 axs[0].set_ylim((10**-4.5),10**-1.5)
-# axs[0].set_xlabel(r'$f$ (Hz)')
-# axs[0].set_ylabel(r'$S_{f}$ (m$^{2}$/Hz)')
 axs[0].legend(prop={'size': 10})
 axs[0].grid(True, alpha = 0.2)
 
-# axs[1].plot(SMwg_sz['dirs'],SMwg_sz['Sd'], c='k', lw=1)
-# # axs[1].plot(SMwg_is['dirs'],SMwg_is['Sd'], c='k', lw=1, linestyle='-.')
-# axs[1].plot(SMpress_sz['dirs'],SMpress_sz['Sd'], c='r', lw=1)
-# axs[1].plot(SMpress_is['dirs'],SMpress_is['Sd'], c='r', lw=1, linestyle='-.')
 axs[1].plot(SMcam_sz['dirs'],SMcam_sz['Sd'], c='b', lw=1)
-# axs[1].plot(SMlid_sz['dirs'],SMlid_sz['Sd'], c='g', lw=1)
-# axs[1].set_xlim(SMwg_sz['dirs'].min(),SMwg_sz['dirs'].max())
 axs[1].set_yscale('log')
 axs[1].set_ylim((10**-6.5),10**-2)
 axs[1].set_xlabel(r'Deg. $(^{\circ})$')
@@ -261,12 +222,7 @@ plt.show()
 # %% Plots
 
 fig, axs = plt.subplots(2,figsize=(8,7))
-# axs[0].plot(SfMwg_sz['freqs'],SMwg_sz['th_2'], c='k', lw=1, label='wg sz')
-# # axs[0].plot(SMwg_is['freqs'],SMwg_is['th_2'], c='k', lw=1, linestyle='-.', label='wg is')
-# axs[0].plot(SMpress_sz['freqs'],SMpress_sz['th_2'], c='r', lw=1, label='press sz')
-# axs[0].plot(SMpress_is['freqs'],SMpress_is['th_2'], c='r', lw=1, linestyle='-.', label='press is')
 axs[0].plot(SMcam_sz['freqs'],SMcam_sz['th_2'], c='b', lw=1, label='cam sz')
-# axs[0].plot(SMlid_sz['freqs'],SMlid_sz['th_2'], c='g', lw=1, label='lid sz')
 axs[0].set_xlim(SMcam_sz['freqs'].min(),2.5)
 axs[0].set_ylim(-100,100)
 axs[0].set_xlabel(r'$f$ (Hz)')
@@ -274,30 +230,21 @@ axs[0].set_ylabel(r'$\Theta (^{\circ})$')
 axs[0].legend(prop={'size': 10})
 axs[0].grid(True, alpha = 0.2)
 
-# axs[1].plot(SMwg_sz['freqs'],SMwg_sz['sig_2'], c='k', lw=1) #, label='Data')
-# # axs[1].plot(SMwg_is['freqs'],SMwg_is['sig_2'], c='k', lw=1, linestyle='-.')
-# axs[1].plot(SMpress_sz['freqs'],SMpress_sz['sig_2'], c='r', lw=1)
-# axs[1].plot(SMpress_is['freqs'],SMpress_is['sig_2'], c='r', lw=1, linestyle='-.')
 axs[1].plot(SMcam_sz['freqs'],SMcam_sz['sig_2'], c='b', lw=1)
-# axs[1].plot(SMlid_sz['freqs'],SMlid_sz['sig_2'], c='g', lw=1)
 axs[1].set_xlim(SMcam_sz['freqs'].min(),2.5)
 axs[1].set_ylim(0,45)
 axs[1].set_xlabel(r'$f$ (Hz)')
 axs[1].set_ylabel(r'$\sigma_{\Theta} (^{\circ}$)')
 axs[1].grid(True, alpha = 0.2)
-# plt.rcParams["font.family"] = "serif"
 plt.savefig(figpath + 'Hs' + str(int(Tinfo['Hs']*100)) + '_Tp' + str(Tinfo['Tp']) + '_sprd' + str(Tinfo['spread']) + '_h' + str(int(Tinfo['h']*100)) + '_theta_sigma_cam_' + ffaddition +'.png', bbox_inches='tight')
 plt.show()
 
-# %% camera log scale
+# %% camera polar plot log scale
 
 from matplotlib import colors, ticker, cm
 from matplotlib.colors import LogNorm
 cax = [10**-6, 10**-4.65]
-#cax = [1e-6, 1e-5]
 
-# values = np.transpose(SMcam_sz['S'].real)
-#test = SMcam_sz['S'].real
 values = np.transpose(copy.copy(Savg))
 values[values<cax[0]]=cax[0]
 values[values>cax[1]]=cax[1]
@@ -313,89 +260,16 @@ r, theta = np.meshgrid(zeniths, azimuths)
 fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12, 9), dpi=80)
 ax.set_theta_zero_location("N")
 ax.set_theta_direction(-1)
-# CS = plt.contourf(theta, r, values, levels=[10**-5, 10**-4, 10**-3, 10**-2],  cmap='plasma')
-
 
 cnorm= LogNorm(vmin=cax[0], vmax=cax[1])
-
-
-# CS = plt.contourf(theta, r, values, locator=ticker.LogLocator(subs=range(1,10)),  cmap='autumn', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
-CS = plt.contourf(theta, r, values, levels=np.logspace(-6,-4.4,31),  cmap='viridis', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
-#CS = plt.contourf(theta, r, values, levels=np.logspace(-6,-5,31),  cmap='viridis', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
+CS = plt.contourf(theta, r, values, levels=np.logspace(-6,-4.4,31),  cmap='viridis', norm=cnorm)
 cbaxes = fig.add_axes([0.86, 0.1, 0.03, 0.7])
-#cbar = fig.colorbar(CS, ticks=[1e-6, 1e-5, 1e-4], cax = cbaxes)
 cbar = fig.colorbar(CS, ticks=[1e-6, 1e-5], cax = cbaxes)
-#cbar.ax.set_yticklabels([r'$10^{-6}$', '$10^{-5}$', '$10^{-4}$'])
 cbar.ax.set_yticklabels([r'$10^{-6}$', '$10^{-5}$'])
 cbar.set_label(r'$S(f,\Theta)$',labelpad=-40, y=1.1, rotation=0)
-
 
 rlabels = ax.get_ymajorticklabels()
 for label in rlabels[:-1]:
     label.set_color('white')
 
 plt.savefig(figpath + 'Hs' + str(int(Tinfo['Hs']*100)) + '_Tp' + str(Tinfo['Tp']) + '_sprd' + str(Tinfo['spread']) + '_h' + str(int(Tinfo['h']*100)) + '_Sfd_polar_camera_sz_log_' + ffaddition +'.png', bbox_inches='tight')
-
-# plt.close('all')
-
-# %% camera no log
-
-cax = [10**-6, 10**-4.55]
-cax = [0,0.000022]
-# values = np.transpose(SMcam_sz['S'].real)
-values = np.transpose(copy.copy(Savg))
-values[values<cax[0]]=cax[0]
-values[values>cax[1]]=cax[1]
-
-theta = np.array(SMcam_sz['dirs'])
-azimuths = np.radians(SMcam_sz['dirs'])
-zeniths = np.array(SMcam_sz['freqs'][0:121])
- 
-values = np.array(values[:, 0:121])
-values = values.reshape(len(azimuths), len(zeniths))
- 
-r, theta = np.meshgrid(zeniths, azimuths)
-fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12, 9), dpi=80)
-plt.rcParams['font.size'] = '26'
-ax.set_theta_zero_location("N")
-ax.set_theta_direction(-1)
-# ax.set_rlabel_position(-5)
-# CS = plt.contourf(theta, r, values, levels=[10**-5, 10**-4, 10**-3, 10**-2],  cmap='plasma')
-
-ax.xaxis.set_tick_params(pad=20) # pad the theta away from the plot
-# cnorm= LogNorm(vmin=cax[0], vmax=cax[1])
-
-
-# CS = plt.contourf(theta, r, values, locator=ticker.LogLocator(subs=range(1,10)),  cmap='autumn', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
-# CS = plt.contourf(theta, r, values, levels=np.logspace(-6,-4,31),  cmap='viridis', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
-CS = plt.contourf(theta, r, values, levels=np.linspace(cax[0],cax[1],41), cmap='viridis')#, vmin=0.0001, vmax=0.01, cmap='plasma')
-
-# CS = plt.contourf(theta, r, values, levels=np.logspace(-6,-5,31),  cmap='viridis', norm=cnorm)#, vmin=0.0001, vmax=0.01, cmap='plasma')
-cbaxes = fig.add_axes([0.86, 0.14, 0.03, 0.6])
-# cbar = fig.colorbar(CS, ticks=[1e-6, 1e-5, 1e-4], cax = cbaxes)
-# cbar = fig.colorbar(CS, ticks=[0.00001, 0.00002, 0.00003, 0.00004, 0.00005, 0.00006, 0.00007, 0.00008, 0.00009, 0.0001], cax = cbaxes)
-cbar = fig.colorbar(CS, cax = cbaxes)
-
-ax.set_rticks([0, 0.3, 0.6, 0.9, 1.2])
-
-# thetaticks = np.arange(0,360,45)
-# ax.set_thetagrids(thetaticks, frac=1.3)
-# cbar.ax.set_yticklabels([r'$10^{-6}$', '$10^{-5}$', '$10^{-4}$'])
-# cbar.ax.set_yticklabels([r'$10^{-6}$', '$10^{-5}$'])
-cbar.set_label(r'$S(f,\Theta)$',labelpad=-50, y=1.2, rotation=0, fontsize=28)
-# sns.set_style("whitegrid")
-
-rlabels = ax.get_ymajorticklabels()
-# rlabels.set_fontsize(28)
-# ax.set_xmajorticklabels(fontsize=22)
-for label in rlabels[:-1]:
-    label.set_color('white')
-    label.set_fontsize(28)
-    # label.set_position(1)
-    
-
-plt.savefig(figpath + 'Hs' + str(int(Tinfo['Hs']*100)) + '_Tp' + str(Tinfo['Tp']) + '_sprd' + str(Tinfo['spread']) + '_h' + str(int(Tinfo['h']*100)) + '_Sfd_polar_camera_sz_nolog_' + ffaddition +'_clim1.png', bbox_inches='tight')
-
-
-
-  
