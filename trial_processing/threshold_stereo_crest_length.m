@@ -1,4 +1,4 @@
-function threshold_stereo_crest_length(Tinfo,gamma,minarea,samprate,pltflag,ixlim)
+function threshold_stereo_crest_length(Tinfo,gamma,minarea,samprate,pltflag,ixlim,iylim,idxdy)
 % This code will plot rectified images using code from
 % D_gridGenExpampleRect.m in the CIRN-Quantitative-Coastal-Imaging-Toolbox
 
@@ -41,55 +41,73 @@ figure; plot(xh,Tinfo.tide-bathymetry.h); hold on; plot(xh,h)
 
 eval(['!mkdir ',Tinfo.figfolder,'stereo'])
 subname = '';
-F1 = [Tinfo.cam.datafolder,'dem_region_x',num2str(Tinfo.cam.regx(1)),'to',num2str(Tinfo.cam.regx(end)),'m_yneg',num2str(abs(Tinfo.cam.regy(1))),'to',num2str(Tinfo.cam.regy(end)),'m_res',num2str((Tinfo.cam.dx)*100),'cm.mat'];
-load(F1,'x','y','z');
+Tinfo.cam.regy = iylim;
+% F1 = [Tinfo.cam.datafolder,'dem_region_x',num2str(Tinfo.cam.regx(1)),'to',num2str(Tinfo.cam.regx(end)),'m_yneg',num2str(abs(Tinfo.cam.regy(1))),'to',num2str(Tinfo.cam.regy(end)),'m_resx',num2str((idxdy)*100),'cm_resy',num2str((idxdy)*100),'cm',subname,'.mat'];
+if Tinfo.filt == 1
+    F1 = [Tinfo.cam.datafolder,'dem_region_x',num2str(Tinfo.cam.regx(1)),'to',num2str(Tinfo.cam.regx(end)),'m_yneg',num2str(abs(Tinfo.cam.regy(1))),'to',num2str(Tinfo.cam.regy(end)),'m_resx',num2str((Tinfo.cam.dx)*100),'cm_resy',num2str((Tinfo.cam.dx)*100),'cm_filtered.mat'];
+elseif Tinfo.filt == 0
+    F1 = [Tinfo.cam.datafolder,'dem_region_x',num2str(Tinfo.cam.regx(1)),'to',num2str(Tinfo.cam.regx(end)),'m_yneg',num2str(abs(Tinfo.cam.regy(1))),'to',num2str(Tinfo.cam.regy(end)),'m_resx',num2str((Tinfo.cam.dx)*100),'cm_resy',num2str((Tinfo.cam.dx)*100),'cm.mat'];
+end
+    load(F1,'x','y','z');
 
 %% plot
 
-imageno =  7200:4:11999;
-ylen = [];
+imageno =  Tinfo.cam.imagestart:Tinfo.cam.Hz/samprate:(Tinfo.cam.imagestart+Tinfo.cam.numframes-1);
+yalen = [];
+yclen = [];
+cang = [];
 yim = [];
 xreg = ixlim;
-iylim = [y(1,1) y(end,1)];
+% iylim = [y(1,1) y(end,1)];
 
 [val,idxmin] = min(abs(xreg(1)-x(1,:)));
 [val,idxmax] = min(abs(xreg(2)-x(1,:)));
-X = x(:,idxmin:idxmax);
-Y = y(:,idxmin:idxmax);
-Z = squeeze(z(:,idxmin:idxmax,:));
+[val,idymin] = min(abs(-13.1-y(:,1)));
+[val,idymax] = min(abs(13.2-y(:,1)));
+
+X = x(idymin:idymax,idxmin:idxmax);
+Y = y(idymin:idymax,idxmin:idxmax);
+Z = squeeze(z(idymin:idymax,idxmin:idxmax,:));
+
 msse = nanmean(nanmean(Z,3),1);
 msse = repmat(msse,size(Z,1),1);
 resx = X(1,2)-X(1,1);
 resy = Y(2,1)-Y(1,1);
+clear x y z
 
-remap = 1;
-if remap == 1
-    resx = 0.2;
-    resy = 0.25;
-    xtemp = xreg(1):resx:xreg(2);
-    ytemp = Y(1,1):resy:Y(end,1);
-    y = repmat(ytemp',1,length(xtemp));
-    x = repmat(xtemp,length(ytemp),1);
-end
+remap = 0;
+% if remap == 1
+%     resx = 0.2;
+%     resy = 0.25;
+%     xtemp = xreg(1):resx:xreg(2);
+%     ytemp = Y(1,1):resy:Y(end,1);
+%     y = repmat(ytemp',1,length(xtemp));
+%     x = repmat(xtemp,length(ytemp),1);
+% end
 
 [val,idhmin] = min(abs(xreg(1)-xh));
 [val,idhmax] = min(abs(xreg(2)-xh));
 hmat = repmat(h(idhmin:idhmax)',size(Z,1),1);
 thresh = (gamma/2).*hmat;
-if remap == 1
-    thresh=roundgridfun(X,Y,thresh,x,y,@mean);
-end
+% if remap == 1
+%     thresh=roundgridfun(X,Y,thresh,x,y,@mean);
+% end
 
 imfreq = Tinfo.cam.Hz/samprate;
-
-figure('units','inches','position',[1 1 6 8],'color','w')
+if pltflag == 1
+	figure('units','inches','position',[1 1 6 8],'color','w')
+end
 
 for i = 1:size(Z,3)/imfreq
     
     Zim = squeeze(Z(:,:,i*imfreq))-msse;
-    if remap == 1
-        Zim=roundgridfun(X,Y,Zim,x,y,@mean);
-    end
+    Zim(Zim>0.75) = NaN;
+    Zim = smoothdata(Zim,1,'movmedian',[3 3],'omitnan');%[4 4]
+    Zim = smoothdata(Zim,2,'movmedian',[1 1],'omitnan');% [1 1]
+    
+%     if remap == 1
+%         Zim=roundgridfun(X,Y,Zim,x,y,@mean);
+%     end
 %     Irbw=roundgridfun(X(1,:),Y(:,1),Irbwo,x,y,@mean);
     
     
@@ -98,18 +116,23 @@ for i = 1:size(Z,3)/imfreq
     Iz(Zim>thresh) = 1;
 
     Ioz = bwareaopen(Iz,minarea,8);
+    Ithresh(:,:,i) = Ioz;
 %     Iob = bwareafilt(Iob,5);
     [L,n] = bwlabel(Ioz);
     
     shapeheight = [];
     for ni = 1:n
-        oztemp = 0.*Ioz;
+        oztemp      = 0.*Ioz;
         oztemp(L==ni)=1;
-        props = regionprops(oztemp, 'BoundingBox');
-        shapeheight(ni) = props.BoundingBox(4)*resy;
+        props = regionprops(oztemp, 'BoundingBox', 'MajorAxisLength', 'Orientation');
+%         shapeheight(ni) = props.BoundingBox(4)*resy;
+        aedge(1)    = (props.BoundingBox(2)*resy)+Y(1,1);
+        aedge(2)    = aedge(1)+(props.BoundingBox(4)*resy);
+        yalen        = [yalen; aedge];
+        yclen       = [yclen; props.MajorAxisLength*resy];
+        cang        = [cang; props.Orientation];
+        yim         = [yim imageno(i)];
     end
-    ylen = [ylen shapeheight];
-    yim = [yim ones(1,n)*imageno(i)];
     
     if pltflag == 1
         
@@ -177,12 +200,26 @@ for i = 1:size(Z,3)/imfreq
 end
 
 figure;
-histogram(ylen)
-sname = 'histogram_stereo';
+histogram(abs(yalen(:,1)-yalen(:,2)))
+sname = 'histogram_image_alongshore';
 print([Tinfo.figfolder,sname],'-dpng')
 
-subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2)))];
-psname = [Tinfo.savefolder,'ylen_stereo_gamma',num2str(gamma*10),'_minarea',num2str(minarea),subname,'.mat'];
-eval(['save -v7.3 ',psname,' ylen',' yim',' resx',' resy',' xreg']);
+figure;
+histogram(yclen)
+sname = 'histogram_image_crest';
+print([Tinfo.figfolder,sname],'-dpng')
+
+figure;
+histogram(cang)
+sname = 'histogram_image_orient';
+print([Tinfo.figfolder,sname],'-dpng')
+
+subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2))),'_ycrest'];
+psname = [Tinfo.savefolder,'ylen_stereo_gamma',num2str(gamma*10),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'.mat'];
+eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang']);
+% display('Not saving ylen')
+
+psname = [Tinfo.savefolder,'ylen_stereo_gamma',num2str(gamma*10),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'_selectedregions.mat'];
+eval(['save -v7.3 ',psname,' X',' Y',' Ithresh']);
 
 end

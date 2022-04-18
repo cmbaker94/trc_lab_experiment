@@ -1,4 +1,4 @@
-function [dirsprd,Sfit,dirang] = fit_cos2s(dir,Sd)
+function [dirsprd,Sfit,dirang] = fit_cos2s(Tinfo,dir,Sd)
 % Fit a cos-2s distribution: This code will fit a directional spectra with
 % the closest cos-2s distribution and output the directional spread and
 % angle. The code fits the mean angle based on the max 20 values of the
@@ -31,7 +31,11 @@ intS = trapz(rad,Srad);
 Srnorm = Srad/intS;
 
 % angle
-[~,ith] = maxk(Srad,20);
+if Tinfo.spread == 0
+    [~,ith] = maxk(Srad,3);
+else
+    [~,ith] = maxk(Srad,30);
+end
 dir = mean(rad(ith));
 
 S = 1:85; % full range of s distributions in increments of 1
@@ -50,10 +54,18 @@ Sfit = S(iS);
 Sdist = ((2.^(2*Sfit-1))/pi).*((gamma(Sfit+1)).^2)./gamma(2*Sfit+1).*cos((rad-TH)/2).^(2*Sfit);
 
 % plot input spectra and closes fit spectra
-figure
+figure('units','inches','position',[1 1 5 5],'color','w')
 plot(rad,Srnorm)
 hold on
-plot(rad,Sdist)
+plot(rad2deg(rad),Sdist,'k')
+h1=gca;
+set(h1,'tickdir','out','xminortick','off','yminortick','off');
+set(h1,'ticklength',1*get(h1,'ticklength'));
+set(h1,'fontsize',20);
+xlabel('$\theta~(^{\circ})$','interpreter','latex','fontsize',20);
+ylabel('$S(\theta)$ (m$^{2}/^{\circ}$)','interpreter','latex','fontsize',20);
+% sname =['ex_sprd'];
+%     print([Tinfo.figfolder,sname],'-dpng')
 
 % compute directional spread
 left = trapz(rad,Sdist.*cos(rad))^2;

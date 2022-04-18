@@ -16,6 +16,7 @@ dtheta        = abs(dir(2)-dir(1));
 df            = abs(freq(2)-freq(1));
 Sf            = nansum(Sftheta,2)*dtheta;
 Sd            = nansum(Sftheta(ifmin:ifmax,:),1)*df;
+Sdmm            = movmean(Sd,9);
 
 Sft           = Sftheta(:,idmin:idmax);
 theta         = dir(idmin:idmax);
@@ -35,6 +36,7 @@ dirprop.sig_2 = sig_2;
 dirprop.th_2 = th_2;
 dirprop.Sf = Sf;
 dirprop.Sd = Sd;
+dirprop.Sdmm = Sdmm;
 dirprop.Sftheta = Sftheta;
 dirprop.dir = dir;
 dirprop.freq = freq;

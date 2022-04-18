@@ -1,10 +1,7 @@
-function [press,wg,vel] = load_insitu(Tinfo)
+function [press,wg,vel] = load_insitu_fullrun(Tinfo,tsel)
 % load and extract the right time from the timeseries.
-% input: Tinfo structure
+% input: Tinfo structure, tsel (slected time)
 % output: press, wg data
-
-% time series to extract 
-ctime = Tinfo.cam.timevec; % equivalent to camera.time
 
 % load insitu data
 F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tinfo.sz.tdate,'/',Tinfo.sz.tdate,'-insitu.mat']);
@@ -21,14 +18,15 @@ endtemp     = starttemp+((length(waveg.wg1)-1)*datenum(0,0,0,0,0,1/Hz));
 timetemp    = starttemp:datenum(0,0,0,0,0,1/Hz):endtemp;
  
 % find overlapping range for insitu
-if ctime(1) < datenum(2018,09,06,0,0,0)
-    [temp,istart] = nanmin(abs(ctime(1)-timetemp));
-    [temp,iend] = nanmin(abs(ctime(end)-timetemp));
-elseif ctime(1) > datenum(2018,09,06,0,0,0)
-    istart  = Hz*15*60;
-    iend    = (Hz*25*60)-1;
+[temp,istart] = nanmin(abs(tsel(1)-timetemp));
+[temp,iend] = nanmin(abs(tsel(end)-timetemp));
+
+if istart==iend
+    istart = 100*60*15;
+    iend = (100*60*25)-1;
+    display('This trial is for inner shelf so picking the 10 min range for in situ sz.')
 end
- 
+
 press.time = timetemp(istart:iend)';
 press.name  = fieldnames(pg.xyzd)';
  

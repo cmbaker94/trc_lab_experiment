@@ -58,7 +58,7 @@ end
 load([datapath,'data/processed/cameras/c2_intrinsics_extrinsics.mat']);
 
 % extrinsics = [39.35 0.02 11.03 267.7*pi/180 32.82*pi/180 0.13*pi/180];
-extrinsics(1) = extrinsics(1)+0.75;
+% extrinsics(1) = extrinsics(1);
 
 %% Create matrix to rectify images
 % see code: D_gridGenExampleRect.m
@@ -71,7 +71,7 @@ idxdy=0.01;
 ixlim=[xshore-idxdy xshore+idxdy];%[19 36];%
 iylim=[-14.5 14.5];
 
-iz=0;
+iz=Tinfo.tide;
 
 %  World Extrinsics, need to make into sell
 Extrinsics{1}=extrinsics;

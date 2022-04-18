@@ -24,7 +24,7 @@ scene       = '1';                  % scene number of trial - typ 1
 imagestart  = 07200;                  % images number of first frame on file 
 numframes   = 4800;                   % number of frames processed
 xROI        = [25 37];              % cross-shore region of interest within the tank
-yROI        = [-13 13];             % alongshore region of interest within the tank
+yROI        = [-14 14];             % alongshore region of interest within the tank
 % xloc        = [31;31;31;31;31;31;31];    % x-location of timeseries
 % yloc        = [-12;-8;-4;0;4;8;12];      % y-locatino of timeseries
 xloctran    = [29; 30; 31];                   % cross-shore location of transect
@@ -98,7 +98,7 @@ if extractPT == 1
 elseif extractREGION == 1
     dx      = 0.05;
 %     display('dx,dy = 0.1, CHANGE MAY BE NECESSARY, was 0.05')
-    dy      = 0.25;
+    dy      = 0.05;
     regx    = xROI(1):dx:xROI(2);
     regy    = yROI(1):dy:yROI(2);
     
@@ -359,8 +359,8 @@ if extractREGION == 1
 %                 wlev = z-tide;
 %         eta = nanmean(wlev,3);
         Hs = 4*nanstd(z,[],3);
-        psname2 = [savefolder,'dem_region_x',num2str(regx(1)),'to',num2str(regx(end)),'m_yneg',num2str(abs(regy(1))),'to',num2str(regy(end)),'m_res',num2str((dx)*100),'cm',subname,'.mat'];
-        psname3 = [savefolder,'dem_region_x',num2str(regx(1)),'to',num2str(regx(end)),'m_yneg',num2str(abs(regy(1))),'to',num2str(regy(end)),'m_res',num2str((dx)*100),'cm_bulk_stat',subname,'.mat'];
+        psname2 = [savefolder,'dem_region_x',num2str(regx(1)),'to',num2str(regx(end)),'m_yneg',num2str(abs(regy(1))),'to',num2str(regy(end)),'m_resx',num2str((dx)*100),'cm_resy',num2str((dy)*100),'cm',subname,'.mat'];
+        psname3 = [savefolder,'dem_region_x',num2str(regx(1)),'to',num2str(regx(end)),'m_yneg',num2str(abs(regy(1))),'to',num2str(regy(end)),'m_resx',num2str((dx)*100),'cm_bulk_stat',subname,'.mat'];
 %         xtransect = xloctran(k);
         eval(['save -v7.3 ',psname2,' x',' y',' z',' t',' numPts']);
 %         eval(['save -v7.3 ',psname2,' x',' y',' z',' t',' wlev',' eta',' Hs']);
