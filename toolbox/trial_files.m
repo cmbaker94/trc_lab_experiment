@@ -6,6 +6,8 @@ function Tinfo = trial_files(Tinfo)
 % OUTPUT: 
 % sz, is, lidarfile, Tcam - trial times/names for different instruments
 
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
 Tinfo.datapath    = 'E:\';
 
 if Tinfo.spread == 0
@@ -20,6 +22,7 @@ if Tinfo.spread == 0
             Tinfo.cam.tstart        = '09-01-2018-2214UTC';      	% time starting collection based on spreadsheet
             Tinfo.cam.tdate         = '09-01-2018-2155UTC';         % trial date and time - format ex: 09-01-2018-2155UTC
             Tinfo.offsets           = [-485;-69]; %-487 % index offset relative to camera [in situ, lidar]
+%             Tinfo.c2_extrinsics     = [XX, XX, XX, deg2rad(XX, XX, XX)];
         end
     elseif Tinfo.Hs == 0.35
         Tinfo.sz.tdate            = '';
@@ -202,6 +205,7 @@ elseif Tinfo.spread == 40
             Tinfo.cam.tstart        = '08-31-2018-2232UTC';                   % time starting collection based on spreadsheet
             Tinfo.cam.tdate         = '08-31-2018-2225UTC';      % trial date and time - format ex: 09-01-2018-2155UTC
             Tinfo.offsets           = [3130,293]; %2925 index offset relative to camera [in situ, lidar]
+            Tinfo.c2_extrinsics     = [39.330884, 0.052900, 10.936347, 268.692, 32.721, -0.178];
         end
     elseif Tinfo.Hs == 0.25
          % In situ

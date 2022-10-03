@@ -1,4 +1,4 @@
-function [yc,Cno,Lsz] = calc_analytic_crest_length(Tinfo,xreg,sprdcon,T)
+function [yc,Cno,Lsz] = calc_analytic_crest_length(Tinfo,spread,xreg,sprdcon,T,calcmethod)
 % This code will calculate the crest lenths and number of crest ends.
 
 % CREST LENGTH:
@@ -23,7 +23,7 @@ function [yc,Cno,Lsz] = calc_analytic_crest_length(Tinfo,xreg,sprdcon,T)
 % Cno = number of crest ends
 
 % defaults
-Wtank   = 26.25; % width of tank
+Wtank   = 26.5; % width of tank
 g       = 9.81; % gravity
 load('E:/data/processed/lidar/Riegl/TRC_bathymetry_estimate_line.mat');
 h = -(h-Tinfo.tide);
@@ -31,13 +31,17 @@ h = -(h-Tinfo.tide);
 % Tm = Tp/1.2958;
 
 % Calc yc
-theta = Tinfo.spread*sprdcon;
+theta = spread*sprdcon;
 omega   = 2*pi/T;
 cons    = omega^2*h(1)/g;
 kh      = dispersi(cons);
 k       = kh/h(1);
 L      = 2*pi/k;
-yp      = L/(sind(theta)-sind(-theta));
+if calcmethod == 0
+    yp      = L/(sind(theta)-sind(-theta)); % Dalrymple
+elseif calcmethod == 1
+    yp = L/deg2rad(theta); % L-H
+end
 yc      = 0.5*yp;
 
 % number of crest ends per cross-shore location

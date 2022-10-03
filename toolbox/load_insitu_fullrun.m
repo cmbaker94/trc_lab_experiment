@@ -1,10 +1,17 @@
-function [press,wg,vel] = load_insitu_fullrun(Tinfo,tsel)
+function [press,wg,vel] = load_insitu_fullrun(Tinfo,tsel,szvsis)
 % load and extract the right time from the timeseries.
 % input: Tinfo structure, tsel (slected time)
 % output: press, wg data
 
 % load insitu data
-F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tinfo.sz.tdate,'/',Tinfo.sz.tdate,'-insitu.mat']);
+if szvsis == 0
+    Tdate = Tinfo.sz.tdate;
+elseif szvsis == 1
+    Tdate = Tinfo.is.tdate;
+end
+
+% load insitu data
+F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tdate,'/',Tdate,'-insitu.mat']);
 pg          = F1.press;
 waveg       = F1.wg;
 velocity    = F1.vel;
@@ -19,12 +26,14 @@ timetemp    = starttemp:datenum(0,0,0,0,0,1/Hz):endtemp;
  
 % find overlapping range for insitu
 [temp,istart] = nanmin(abs(tsel(1)-timetemp));
-[temp,iend] = nanmin(abs(tsel(end)-timetemp));
+[temp,iend] = nanmin(abs(tsel(end)-timetemp)); % going all the way till the end of the timestep 
 
 if istart==iend
     istart = 100*60*15;
     iend = (100*60*25)-1;
     display('This trial is for inner shelf so picking the 10 min range for in situ sz.')
+else
+    iend = iend+floor((Hz/Tinfo.cam.Hz-1));
 end
 
 press.time = timetemp(istart:iend)';
@@ -41,7 +50,9 @@ rho     = 1000;
 for i = 1:length(press.name)
     % load pressure data
     eval(['press.press(:,i)   = pg.',press.name{i},'(istart:iend);'])
-    press.eta(:,i) = press2sse_timeseries(press.press(:,i),Hz,offset,maxfac,filtramp);
+    if szvsis == 0
+        press.eta(:,i) = press2sse_timeseries(press.press(:,i),Hz,offset,maxfac,filtramp);
+    end
     eval(['press.xyz(:,i)     = pg.xyzd.',press.name{i},'(1,1:3);']) % z-elevation of sensor in tank coordinates
     press.loc{i} = ['p',sprintf('%02d',str2double(press.name{i}(6:end)))];
     press.etahyd(:,i) = (press.press(:,i)./(rho*g));
@@ -72,6 +83,7 @@ for i = 1:length(vel.names)
     % load wave gage data
     eval(['vel.u(:,i)                     = velocity.u',vel.names{i}(4:end),'(istart:iend);'])
     eval(['vel.v(:,i)                     = velocity.v',vel.names{i}(4:end),'(istart:iend);'])
+    eval(['vel.w(:,i)                     = velocity.w',vel.names{i}(4:end),'(istart:iend);'])
     eval(['vel.xyz(:,i)              = velocity.xyzd.',vel.names{i},'(1,1:3);']) 
     vel.loc{i} = ['vel',sprintf('%02d',str2double(vel.names{i}(4:end)))];
 end

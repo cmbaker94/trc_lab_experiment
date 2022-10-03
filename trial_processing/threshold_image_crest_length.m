@@ -30,6 +30,11 @@ yclen = [];
 cang = [];
 yalen = [];
 yim = [];
+major_ax = [];
+minor_ax = [];
+orientation = [];
+centroid = [];
+yctlen = [];
 
 xreg = ixsel;
 resx = idxdy;
@@ -72,22 +77,56 @@ for i = 1:length(imageno)
     for ni = 1:n
         obtemp = 0.*Iob;
         obtemp(L==ni)=1;
-        props = regionprops(obtemp, 'BoundingBox', 'MajorAxisLength', 'Orientation');
+        props = regionprops(obtemp, 'BoundingBox', 'MajorAxisLength', 'Orientation', 'Centroid', 'MinorAxisLength');
         aedge(1)    = (props.BoundingBox(2)*resy)+Y(1);
         aedge(2)    = aedge(1)+(props.BoundingBox(4)*resy);
         yalen        = [yalen; aedge];
         yclen       = [yclen; props.MajorAxisLength*resy];
         cang        = [cang; props.Orientation];
         yim         = [yim imageno(i)];
+        major_ax    = [major_ax props.MajorAxisLength*resy];
+        minor_ax	= [minor_ax props.MinorAxisLength*resy];
+        orientation = [orientation props.Orientation];
+        ctemp       = props.Centroid*resy+[xreg(1) iylim(1)];
+        centroid    = [centroid; ctemp];
+
+        count = 0;
+        for ro = 1 : size(obtemp, 1)
+            if sum(obtemp(ro,:))>0
+                count = count+1;
+                B(1) = (find(obtemp(ro, :), 1, 'first')*resy)+xreg(1);
+                B(2) = (find(obtemp(ro, :), 1, 'last')*resy)+xreg(1);
+                C(count, 1) = mean(B);
+                C(count, 2) = (ro*resy)+iylim(1);
+            end
+            clear B
+        end
+        xycent{length(yim)} = C(1:floor(length(C)/5):end,:);
+        d = diff(C);
+        totlen = sum(sqrt(sum(d.^2,2)));
+        yctlen = [yctlen; totlen];
+        clear C
     end
-  
     if pltflag == 1
 %         figure('units','inches','position',[1 1 5 8],'color','w')
         % plot
         ax2 = axes('Position',[0.15 0.1 0.4 0.8]);
-        pcolor(X,Y,Irbw)       
+        pcolor(X,Y,Irbw)%(1:end-1,:))       
         %     imagesc(nu,nv,Irbw)
         hold on
+        props = regionprops(Iob, 'BoundingBox', 'MajorAxisLength', 'Orientation', 'Centroid', 'MinorAxisLength');
+        
+        t = linspace(0,2*pi,50);
+        for ni = 1:length(props)
+            a = (props(ni).MajorAxisLength*resy)/2;
+            b = (props(ni).MinorAxisLength*resy)/2;
+            Xc = props(ni).Centroid(1)*resy+xreg(1);
+            Yc = props(ni).Centroid(2)*resy+iylim(1);
+            phi = deg2rad(-props(ni).Orientation);
+            x = Xc + a*cos(t)*cos(phi) - b*sin(t)*sin(phi);
+            y = Yc + a*cos(t)*sin(phi) + b*sin(t)*cos(phi);
+            plot(x,y,'r','Linewidth',5)
+        end    
         shading interp
         colormap('gray');
         %     hc = colorbar('Position', [0.88 0.1 0.03 0.73]);
@@ -106,7 +145,7 @@ for i = 1:length(imageno)
         xlabel('$x$ (m)','interpreter','latex','fontsize',20);
         
         ax3 = axes('Position',[0.46 0.1 0.45 0.8]);
-        pcolor(X,Y,double(Iob)) 
+        pcolor(X,Y,double(Iob))%(1:end-1,:))) 
         hold on
         shading faceted
         colormap('gray');
@@ -149,13 +188,23 @@ sname = 'histogram_image_crest';
 print([Tinfo.figfolder,sname],'-dpng')
 
 figure;
+histogram(yctlen)
+sname = 'histogram_image_crest_transect';
+print([Tinfo.figfolder,sname],'-dpng')
+
+figure;
 histogram(cang)
 sname = 'histogram_image_orient';
 print([Tinfo.figfolder,sname],'-dpng')
 
-subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2))),'_ycrest'];
+elipgeom.major_ax = major_ax;
+elipgeom.minor_ax = minor_ax;
+elipgeom.orientation = orientation;
+elipgeom.centroid = centroid;
+
+subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2))),'_ycrest_res',num2str(idxdy),'_met'];
 psname = [Tinfo.savefolder,'ylen_thresh',num2str(thresh*100),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'.mat'];
-eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang']);
+eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang',' yctlen',' elipgeom',' xycent']);
 % display('Not saving ylen')
 
 psname = [Tinfo.savefolder,'ylen_thresh',num2str(thresh*100),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'_selectedregions.mat'];

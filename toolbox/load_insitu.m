@@ -1,4 +1,4 @@
-function [press,wg,vel] = load_insitu(Tinfo)
+function [press,wg,vel] = load_insitu(Tinfo,array)
 % load and extract the right time from the timeseries.
 % input: Tinfo structure
 % output: press, wg data
@@ -7,7 +7,11 @@ function [press,wg,vel] = load_insitu(Tinfo)
 ctime = Tinfo.cam.timevec; % equivalent to camera.time
 
 % load insitu data
-F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tinfo.sz.tdate,'/',Tinfo.sz.tdate,'-insitu.mat']);
+if array == 1
+    F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tinfo.sz.tdate,'/',Tinfo.sz.tdate,'-insitu.mat']);
+elseif array == 2
+    F1          = matfile([Tinfo.datapath,'data/processed/insitu/',Tinfo.is.tdate,'/',Tinfo.is.tdate,'-insitu.mat']);
+end
 pg          = F1.press;
 waveg       = F1.wg;
 velocity    = F1.vel;
@@ -21,10 +25,15 @@ endtemp     = starttemp+((length(waveg.wg1)-1)*datenum(0,0,0,0,0,1/Hz));
 timetemp    = starttemp:datenum(0,0,0,0,0,1/Hz):endtemp;
  
 % find overlapping range for insitu
-if ctime(1) < datenum(2018,09,06,0,0,0)
-    [temp,istart] = nanmin(abs(ctime(1)-timetemp));
-    [temp,iend] = nanmin(abs(ctime(end)-timetemp));
-elseif ctime(1) > datenum(2018,09,06,0,0,0)
+if array ==  1
+    if ctime(1) < datenum(2018,09,06,0,0,0)
+        [temp,istart] = nanmin(abs(ctime(1)-timetemp));
+        [temp,iend] = nanmin(abs(ctime(end)-timetemp));
+    elseif ctime(1) > datenum(2018,09,06,0,0,0)
+        istart  = Hz*15*60;
+        iend    = (Hz*25*60)-1;
+    end
+elseif array ==  2
     istart  = Hz*15*60;
     iend    = (Hz*25*60)-1;
 end
@@ -43,7 +52,9 @@ rho     = 1000;
 for i = 1:length(press.name)
     % load pressure data
     eval(['press.press(:,i)   = pg.',press.name{i},'(istart:iend);'])
-    press.eta(:,i) = press2sse_timeseries(press.press(:,i),Hz,offset,maxfac,filtramp);
+    if array  ==  1
+        press.eta(:,i) = press2sse_timeseries(press.press(:,i),Hz,offset,maxfac,filtramp);
+    end
     eval(['press.xyz(:,i)     = pg.xyzd.',press.name{i},'(1,1:3);']) % z-elevation of sensor in tank coordinates
     press.loc{i} = ['p',sprintf('%02d',str2double(press.name{i}(6:end)))];
     press.etahyd(:,i) = (press.press(:,i)./(rho*g));

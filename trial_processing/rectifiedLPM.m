@@ -21,8 +21,8 @@ Tinfo.Hs = 0.3;
 Tinfo.Tp = 2;
 Tinfo.tide = 1.07;
 Tinfo.spread = 30;
-idxdy   = 0.05;
-ixlim   = [25 35];
+idxdy   = 0.02;
+ixlim   = [18 35];
 iylim   = [-14 14];
 fps     = 8;
 cutoff  = 4; %s
@@ -46,8 +46,9 @@ odir = [Tinfo.savefolder(1:74),'orthos\',geoname];
 cnames = ls([odir,'\c2_*.tiff']);
 L = cnames(:,4:8);
 
-% display('TEMP TRIMING')
+display('TEMP TRIMING')
 % L = L(1:(60/cutoff)*fps*3,:);
+% L = L(7201:12000,:);
 
 t = str2num(L)/Tinfo.cam.Hz;
 dt=mode(diff(t));
@@ -121,14 +122,14 @@ end
    close(v) 
    
 %% plot instantenous 
-inname = ['c2_',L(1,:),'_',L(end,:),'_inst'];
+inname = ['c2_',L(1,:),'_',L(end,:),'_instaneous'];
    
 v = VideoWriter(fullfile(sname,[inname,'R.avi']));
 v.FrameRate=24; %?????
 open(v)
 
 for k=1:length(t)
-writeVideo(v,Ilp(:,:,k))
+writeVideo(v,uint8(I(:,:,k)))
 
 k
 end  

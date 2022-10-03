@@ -16,9 +16,10 @@ Tinfo.savefolder = [Tinfo.procpath,'\',Tinfo.cam.tstart,'\',Tinfo.datarange,'\']
 
 % figure folder
 fssubfolder = datestr(date,'yy-mm-dd');
-Tinfo.figfolder   = [Tinfo.datapath,'figures\meas_comp\',Tinfo.cam.trialname,'\',Tinfo.cam.trimname,fssubfolder,'\'];
+Tinfo.figfolder   = [Tinfo.datapath,'figures\conditions\',Tinfo.comp,'\',Tinfo.cam.tstart,'\',Tinfo.datarange,'\',fssubfolder,'\'];
 
 % make figure folders
-eval(['mkdir ',Tinfo.datapath,'figures\meas_comp\',Tinfo.cam.trialname]);
-eval(['mkdir ',Tinfo.datapath,'figures\meas_comp\',Tinfo.cam.trialname,'\',Tinfo.cam.trimname]);
+eval(['mkdir ',Tinfo.datapath,'figures\conditions\',Tinfo.comp]);
+eval(['mkdir ',Tinfo.datapath,'figures\conditions\',Tinfo.comp,'\',Tinfo.cam.tstart]);
+eval(['mkdir ',Tinfo.datapath,'figures\conditions\',Tinfo.comp,'\',Tinfo.cam.tstart,'\',Tinfo.datarange]);
 eval(['mkdir ',Tinfo.figfolder])

@@ -5,19 +5,23 @@ function calc_directional_spec_iter_press(Tinfo,hyd)
 %% STEP 1: Clear All
 % close all
 % clc
+% clear all
 addpath(genpath('C:\Users\cmbaker9\Documents\MATLAB\MTOOLS'))
 % addpath(genpath('E:\codes\insitu'))
 addpath(genpath('E:\codes\trc_lab_experiment\toolbox')) 
 % 
 % %% Input trial details
 % 
-% Tinfo.spread = 30;
+% Tinfo.spread = 0;
 % Tinfo.Hs = 0.25;
 % Tinfo.Tp = 2;
 % Tinfo.tide = 1.07;
 % Tinfo.filt = 1;
-instnum = 5;
-iternum = 120;
+% hyd= 1; % zero means depth attenuation correction, 1 means pressure in units (N/m/m)
+
+
+instnum = 5
+iternum = 120
 inHz = 100;
 
 %% SM defaults
@@ -27,11 +31,16 @@ SM.freqs      = [0.01:0.01:3];
 SM.S          = zeros(300,360);
 EP.nfft       = inHz*(2^5); %  32 sec window
 EP.dres       = 360;
-EP.method     = 'IMLM';
+EP.method     = 'EMLM';%'EMLM' 'IMLM' 'EMEP' 'BDM'
 if hyd == 0
-    IDdef.datatypes  = {'elev' 'elev' 'elev' 'elev' 'elev'};
+%     IDdef.datatypes  = {'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev'};
+    IDdef.datatypes  = {'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev' 'elev'};
 elseif hyd == 1
-    IDdef.datatypes  = {'pres' 'pres' 'pres' 'pres' 'pres'};
+%     IDdef.datatypes  = {'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres'};
+    IDdef.datatypes  = {'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres'};
+elseif hyd == 2
+%     IDdef.datatypes  = {'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres'};
+    IDdef.datatypes  = {'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres' 'pres'};
 end
 IDdef.fs         = inHz;
 % IDdef.depth      = 0.1664;
@@ -74,10 +83,13 @@ IDdef.depth = mean(Tinfo.tide-press.xyz(3,:));
 if hyd == 0
     z        = press.eta-mean(press.eta,1);
 elseif hyd == 1
-    z        = press.etahyd;%-mean(press.etahyd,1);
+    z        = press.press;%press.etahyd;%-mean(press.etahyd,1);
+elseif hyd == 2
+    z = press.etahyd;
 end
 XL       = press.xyz(1,:);
 YL       = press.xyz(2,:);
+ZL       = mean(press.etahyd,1);%press.xyz(3,:);
 
 %% STEP 4: Select Points
 
@@ -94,6 +106,7 @@ for it = 1:10000
     ix = randperm(size(XL,2),instnum);
     xd = XL(ix);
     yd = YL(ix);
+    zd = ZL(ix);
     stdmet = 1;
     linemet = 1;
     if length(unique(round(xd))) < 2
@@ -108,10 +121,19 @@ for it = 1:10000
         ID              = IDdef;
         ID.data       = z(:,ix); % 6000 x 14
         N             = size(xd,2);
-        ID.layout     = [xd;yd; zeros(1,N)]; % 3 x 14
+        if hyd == 0
+            ID.layout     = [xd;yd; zeros(1,N)]; % 3 x 14
+        elseif hyd == 1
+            ID.layout = [xd; yd; zd];
+        elseif hyd == 2
+            ID.layout = [xd; yd; zd];
+        end
         options = {'PLOTTYPE',0};
         [Smout,EPout] = dirspec(ID,SM,EP,options);
         
+        dtheta = diff(Smout.dirs(1:2));
+        df      = diff(Smout.freqs(1:2));
+        Sout            = sqrt(2*Smout.S*dtheta*df);
         Spec(:,:,count) = Smout.S;
         
         count = count + 1;
@@ -133,7 +155,7 @@ if Tinfo.filt == 1
     	specsave = [Tinfo.savefolder,'dirspec_press_sz_rand_',num2str(instnum),'inst_',num2str(iternum),'iter_hyd'];
     end
 end
-eval(['save -v7.3 ',specsave,' dirs',' freqs',' Savg',' Spec'])
+% eval(['save -v7.3 ',specsave,' dirs',' freqs',' Savg',' Spec'])
 
 %% Try DIWASP
 
@@ -149,14 +171,15 @@ figure('units','inches','position',[1 1 10 8],'color','w');
 subplot(211)
 semilogy(Smout.freqs,Sf,'k','linewidth',3);
 hold on
-semilogy(fsmall,fsmall4,'b','linewidth',2);
+% semilogy(fsmall,fsmall4,'b','linewidth',2);
 grid
 xlabel('$\mathrm{Freq.}~\mathrm{(Hz)}$','interpreter','latex')
 ylabel('$S_{f}~(\mathrm{m^{2}/Hz})$','interpreter','latex')
-ylim([10^-4.5 10^-1.5])
+% ylim([10^-4.5 10^-1.5])
 xlim([0 3]);
 h1=gca;
 set(h1,'fontsize',15);
+title(EP.method,'interpreter','latex')
 
 subplot(212)
 semilogy(Smout.dirs,Sd,'k','linewidth',3);

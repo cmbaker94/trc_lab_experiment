@@ -10,11 +10,12 @@ Created on Tue Dec  1 14:32:01 2020
 
 # Author: C.M. Baker \
 # Last updated: November 23, 2020
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
+# from IPython import get_ipython
+# get_ipython().magic('reset -sf')
 
 import numpy as np
 import os
+import sys
 from scipy import signal
 import scipy as sp
 from scipy import signal
@@ -31,6 +32,9 @@ font = {'family' : 'normal',
 rc('font', **font)
 rc('text', usetex=True)
 plt.close('all')
+
+sys.path.append("E:\\code\\trc_lab_experiment\\toolbox")
+from trial_files import trial_files
 
 def dispersi(omega,h):
     """ Solution of the linear dispersion relationship for surface gravity waves.
@@ -115,24 +119,40 @@ def crosscorr(datax, datay, lag=0, wrap=False):
 " --------- "
 Tinfo = dict()
 # Wave conditions
-Tinfo['Hs'] = 0.30
+Tinfo['Hs'] = 0.25
 Tinfo['Tp'] = 2
-Tinfo['watlev'] = 1.07
-Tinfo['spread'] = 40
+Tinfo['h'] = 1.07
+Tinfo['spread'] = 0
 
-if Tinfo['spread'] == 0:
-    Tinfo['timerange'] = '2229-2238'
-    Tinfo['trialstart'] = '09-01-2018-2214UTC'
-elif Tinfo['spread'] == 20:
-    Tinfo['timerange'] = '2237-2246'
-    Tinfo['trialstart'] = '08-30-2018-2222UTC'
-elif Tinfo['spread'] == 40:
-    Tinfo['timerange'] = '0014-0023'
-    Tinfo['trialstart'] = '08-29-2018-2359UTC'
+Tinfo = trial_files(Tinfo['Hs'],Tinfo['Tp'],Tinfo['spread'],Tinfo['h'])
+Tinfo['trialstart'] = Tinfo['clpath']
+Tinfo['timerange'] = Tinfo['timesection']
+
+# if Tinfo['spread'] == 0:
+#     if Tinfo['Hs'] == 0.3:
+#         Tinfo['timerange'] = '2229-2238'
+#         Tinfo['trialstart'] = '09-01-2018-2214UTC'
+#     elif Tinfo['Hs'] == 0.25:
+#         Tinfo['timerange'] = ''
+#         Tinfo['trialstart'] = ''
+# elif Tinfo['spread'] == 20:
+#     Tinfo['timerange'] = '2237-2246'
+#     Tinfo['trialstart'] = '08-30-2018-2222UTC'
+# elif Tinfo['spread'] == 30:
+#     if Tinfo['Hs'] == 0.25:
+#         Tinfo['timerange'] = '2117-2126'
+#         Tinfo['trialstart'] = '09-01-2018-2102UTC'
+# elif Tinfo['spread'] == 40:
+#     if Tinfo['Hs'] == 0.3:
+#         Tinfo['timerange'] = '0014-0023'
+#         Tinfo['trialstart'] = '08-29-2018-2359UTC'
+#     elif Tinfo['Hs'] == 0.25:
+#         Tinfo['timerange'] = '1710-1719'
+#         Tinfo['trialstart'] = '08-30-2018-1655UTC'
 
 # Create compiled name
 temp1 = str(Tinfo['Hs']*100).rstrip('0').rstrip('.')
-temp2 = str(Tinfo['watlev']*100).rstrip('0').rstrip('.')
+temp2 = str(Tinfo['h']*100).rstrip('0').rstrip('.')
 Tinfo['comp'] = 'Hs' + temp1 + '_Tp' + str(Tinfo['Tp']) +'_tide'+ temp2 + '_spread' + str(Tinfo['spread'])
 
 # Generate string where data is stored
@@ -148,8 +168,8 @@ if not os.path.exists(figfolder):
 # Read csv files
 xyz = pd.read_csv(datafolder + 'pressure_array_xyz.csv')
 dp = pd.read_csv(datafolder + 'pressure_array_timeseries.csv')
-dc = pd.read_csv(datafolder + 'cam_array_timeseries.csv')
-dl = pd.read_csv(datafolder + 'lidar_array_timeseries.csv')
+dc = pd.read_csv(datafolder + 'cam_array_timeseries_filt.csv')
+dl = pd.read_csv(datafolder + 'lidar_array_timeseries_filt.csv')
 # !head -n 15 $
 
 # In situ data calculations
@@ -197,26 +217,29 @@ dl['date'] = pd.date_range('00:00', periods=len(dl), freq='100ms')
 dls = dl.set_index('date').resample('125ms').mean()
 
 # plot raw data
-fig, axs = plt.subplots(3, figsize=(15,10))
-axs[0].plot(dpe['date'], dpe['p11'], c='k', lw=0.3, label='press')
-axs[0].plot(dc['date'][:len(dpes)], dpes['p11'], c='r', lw=0.2, label='press resamp')
-axs[1].plot(dc['date'], dc['c11'], c='k', lw=0.3, label='camera')
-axs[2].plot(dl['date'], dl['l11'], c='k', lw=0.3, label='lidar')
-axs[2].plot(dc['date'], dls['l11'], c='r', lw=0.2, label='press resamp')
-# axs[0].set_ylim((-.3,.3))
-axs[0].set_title('Pressure Timeseries')
-axs[1].set_title('Stereo Timeseries')
-axs[2].set_title('Lidar Timeseries')
-for ax in fig.get_axes():
-    ax.set_xlim((dpe['date'].iloc[0],dpe['date'].iloc[-1]))
-#     ax.legend()
-    ax.grid(True, alpha = 0.3)
-    ax.set_xlabel('t (s)')
-    ax.set_ylabel('$\eta$ (m)')
-# plt.savefig(figfolder + 'timeseries.png', bbox_inches='tight')
-plt.show()
+pltraw = 0
+if pltraw == 1:
+    fig, axs = plt.subplots(3, figsize=(15,10))
+    axs[0].plot(dpe['date'], dpe['p11'], c='k', lw=0.3, label='press')
+    axs[0].plot(dc['date'][:len(dpes)], dpes['p11'], c='r', lw=0.2, label='press resamp')
+    axs[1].plot(dc['date'], dc['c11'], c='k', lw=0.3, label='camera')
+    axs[2].plot(dl['date'], dl['l11'], c='k', lw=0.3, label='lidar')
+    axs[2].plot(dc['date'], dls['l11'], c='r', lw=0.2, label='press resamp')
+    # axs[0].set_ylim((-.3,.3))
+    axs[0].set_title('Pressure Timeseries')
+    axs[1].set_title('Stereo Timeseries')
+    axs[2].set_title('Lidar Timeseries')
+    for ax in fig.get_axes():
+        ax.set_xlim((dpe['date'].iloc[0],dpe['date'].iloc[-1]))
+        #     ax.legend()
+        ax.grid(True, alpha = 0.3)
+        ax.set_xlabel('t (s)')
+        ax.set_ylabel('$\eta$ (m)')
+    # plt.savefig(figfolder + 'timeseries.png', bbox_inches='tight')
+    plt.show()
 
 # %% Find time lag
+# typically use p11
 tpes = dpes['p11'].reset_index(drop = True) # same result for pressure and depth-attenuation corrected
 tls = dls['l11'].reset_index(drop = True) # referenced to lidar since that is started first
 tc = dc['c11'].reset_index(drop = True)
@@ -231,12 +254,12 @@ rs_cl = [crosscorr(tc,tls, lag) for lag in range(0,seconds*fps)]
 rs_lp = [crosscorr(tls,tpes, lag) for lag in range(0,seconds*fps)]
 rs_lc = [crosscorr(tls,tc, lag) for lag in range(0,seconds*fps)]
 
-rs = [(np.nan, np.argmax(rs_pc), np.argmax(rs_pl)) , 
-      (np.argmax(rs_cp), np.nan, np.argmax(rs_cl)), 
+rs = [(np.nan, np.argmax(rs_pc), np.argmax(rs_pl)) ,
+      (np.argmax(rs_cp), np.nan, np.argmax(rs_cl)),
       (np.argmax(rs_lp), np.argmax(rs_lc), np.nan)]
 
-# rs = [(np.nan, np.argmax(np.absolute(rs_pc)), np.argmax(np.absolute(rs_pl))) , 
-#       (np.argmax(np.absolute(rs_cp)), np.nan, np.argmax(np.absolute(rs_cl))), 
+# rs = [(np.nan, np.argmax(np.absolute(rs_pc)), np.argmax(np.absolute(rs_pl))) ,
+#       (np.argmax(np.absolute(rs_cp)), np.nan, np.argmax(np.absolute(rs_cl))),
 #       (np.argmax(np.absolute(rs_lp)), np.argmax(np.absolute(rs_lc)), np.nan)]
 
 drs = pd.DataFrame(rs, columns = ['press', 'camera', 'lidar'], index=['press', 'camera', 'lidar'])
@@ -285,8 +308,14 @@ elif Tinfo['spread'] == 20:
     # lidar before pressure gage
     # camera??
     last = 'l'
+elif Tinfo['spread'] == 30:
+    if Tinfo['Hs'] == 0.25:
+        last = 'l'
 elif Tinfo['spread'] == 40:
-    last = 'l'
+    if Tinfo['Hs'] == 0.3:
+        last = 'l'
+    elif Tinfo['Hs'] == 0.25:
+        last = 'l'
     # lidar before pressure gage
     # camera??
 
@@ -316,6 +345,8 @@ elif last == 'l':
     dpe['date'] = pd.date_range('00:00', periods=len(dpe), freq='10ms')
     di['date'] = pd.date_range('00:00', periods=len(dpe), freq='10ms')
     dc['date'] = pd.date_range('00:00', periods=len(dc), freq='125ms')
+    if int(drs.loc['camera']['lidar']) > int(drs.loc['press']['lidar']):
+        offsets = [-int(((cstart/8)*100))+pstart, -int(cstart*(10/8))]
 elif last == 'u':
     pstart = int(((drs.loc['press']['lidar']+drs.loc['lidar']['camera'])/8)*100)+5 # plus 5 to adjust for the middle
     lstart = int(drs.loc['lidar']['camera'])
@@ -339,7 +370,7 @@ elif last == 'u':
 # %% Plot timeseries with subplots
 
 press_gauges = ['06','11']
-plotallmeas = 1
+plotallmeas = 0
 
 if plotallmeas == 1:
     for inst in press_gauges:
@@ -385,7 +416,7 @@ if plotallmeas == 1:
             axs.hlines(0, dl['date'].min(), dl['date'].max(), colors='grey', linestyles='-',alpha = 0.25)
             # axs[0].set_ylim((-.3,.3))
             axs.set_title('$H_s$ = ' + str(Tinfo['Hs']) + ' m, $T_p$ = ' + str(Tinfo['Tp']) +r' s, $\langle \eta \rangle $ = '
-                          + str(Tinfo['watlev']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: ' 
+                          + str(Tinfo['h']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: '
                           + 'p' + inst + ', $x$ = ' + str(round(xyz['p' + inst].iloc[0],1)) + ' m',loc='left')
             # axs.get_xaxis().set_ticklabels([])
             axs.set_xlabel('time (hh:mm:ss)')
@@ -445,7 +476,7 @@ if plotallmeas == 1:
 #     axs.hlines(0, dl['date'][0], dl['date'][-1:], colors='grey', linestyles='-',alpha = 0.25)
 #     # axs[0].set_ylim((-.3,.3))
 #     axs.set_title('$H_s$ = ' + str(Tinfo['Hs']) + ' m, $T_p$ = ' + str(Tinfo['Tp']) +r' s, $\langle \eta \rangle $ = '
-#                   + str(Tinfo['watlev']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: ' 
+#                   + str(Tinfo['h']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: '
 #                   + 'p' + inst + ', $x$ = ' + str(round(xyz['p' + inst].iloc[0],1)) + ' m',loc='left')
 #     # axs.get_xaxis().set_ticklabels([])
 #     axs.set_xlabel('time (hh:mm:ss)')
@@ -481,7 +512,7 @@ for inst in press_gauges:
             axs.hlines(0, dl['date'].min(), dl['date'].max(), colors='grey', linestyles='-',alpha = 0.25)
             # axs[0].set_ylim((-.3,.3))
             # axs.set_title('$H_s$ = ' + str(Tinfo['Hs']) + ' m, $T_p$ = ' + str(Tinfo['Tp']) +r' s, $\langle \eta \rangle $ = '
-            #               + str(Tinfo['watlev']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: ' 
+            #               + str(Tinfo['h']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: '
             #               + 'p' + inst + ', $x$ = ' + str(round(xyz['p' + inst].iloc[0],1)) + ' m',loc='left')
             # axs.get_xaxis().set_ticklabels([])
             axs.set_xlabel('time (hh:mm:ss)')
@@ -509,7 +540,7 @@ for inst in press_gauges:
 # axs[0].plot(dl['date'], dl['l' + inst], c='b', lw=0.7, label='lidar')
 # axs[0].scatter(dl['date'], dl['l' + inst], marker='.',s = 4,  c='b')
 # axs[0].set_title('$H_s$ = ' + str(Tinfo['Hs']) + ' m, $T_p$ = ' + str(Tinfo['Tp']) +r' s, $\langle \eta \rangle $ = '
-#               + str(Tinfo['watlev']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: ' 
+#               + str(Tinfo['h']) + r' m, $\sigma_{\theta}$ = ' + str(Tinfo['spread']) + '$^{\circ}$, Instrument: '
 #               + 'p' + inst + ', $x$ = ' + str(round(xyz['p' + inst].iloc[0],1)) + ' m',loc='left')
 
 

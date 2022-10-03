@@ -58,6 +58,11 @@ yclen = [];
 cang = [];
 yim = [];
 xreg = ixlim;
+major_ax = [];
+minor_ax = [];
+orientation = [];
+centroid = [];
+yctlen = [];
 % iylim = [y(1,1) y(end,1)];
 
 [val,idxmin] = min(abs(xreg(1)-x(1,:)));
@@ -124,7 +129,7 @@ for i = 1:size(Z,3)/imfreq
     for ni = 1:n
         oztemp      = 0.*Ioz;
         oztemp(L==ni)=1;
-        props = regionprops(oztemp, 'BoundingBox', 'MajorAxisLength', 'Orientation');
+        props = regionprops(oztemp, 'BoundingBox', 'MajorAxisLength', 'Orientation', 'Centroid', 'MinorAxisLength');
 %         shapeheight(ni) = props.BoundingBox(4)*resy;
         aedge(1)    = (props.BoundingBox(2)*resy)+Y(1,1);
         aedge(2)    = aedge(1)+(props.BoundingBox(4)*resy);
@@ -132,6 +137,28 @@ for i = 1:size(Z,3)/imfreq
         yclen       = [yclen; props.MajorAxisLength*resy];
         cang        = [cang; props.Orientation];
         yim         = [yim imageno(i)];
+        major_ax    = [major_ax props.MajorAxisLength*resy];
+        minor_ax	= [minor_ax props.MinorAxisLength*resy];
+        orientation = [orientation props.Orientation];
+        ctemp       = props.Centroid*resy+[xreg(1) iylim(1)];
+        centroid    = [centroid; ctemp];
+
+        count = 0;
+        for ro = 1 : size(oztemp, 1)
+            if sum(oztemp(ro,:))>0
+                count = count+1;
+                B(1) = (find(oztemp(ro, :), 1, 'first')*resy)+xreg(1);
+                B(2) = (find(oztemp(ro, :), 1, 'last')*resy)+xreg(1);
+                C(count, 1) = mean(B);
+                C(count, 2) = (ro*resy)+iylim(1);
+            end
+            clear B
+        end
+        xycent{length(yim)} = C(1:floor(length(C)/5):end,:);
+        d = diff(C);
+        totlen = sum(sqrt(sum(d.^2,2)));
+        yctlen = [yctlen; totlen];
+        clear C
     end
     
     if pltflag == 1
@@ -210,13 +237,23 @@ sname = 'histogram_image_crest';
 print([Tinfo.figfolder,sname],'-dpng')
 
 figure;
+histogram(yctlen)
+sname = 'histogram_image_crest_transect';
+print([Tinfo.figfolder,sname],'-dpng')
+
+figure;
 histogram(cang)
 sname = 'histogram_image_orient';
 print([Tinfo.figfolder,sname],'-dpng')
 
+elipgeom.major_ax = major_ax;
+elipgeom.minor_ax = minor_ax;
+elipgeom.orientation = orientation;
+elipgeom.centroid = centroid;
+
 subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2))),'_ycrest'];
 psname = [Tinfo.savefolder,'ylen_stereo_gamma',num2str(gamma*10),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'.mat'];
-eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang']);
+eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang',' yctlen',' elipgeom',' xycent']);
 % display('Not saving ylen')
 
 psname = [Tinfo.savefolder,'ylen_stereo_gamma',num2str(gamma*10),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'_selectedregions.mat'];
