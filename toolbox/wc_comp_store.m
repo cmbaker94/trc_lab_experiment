@@ -3,7 +3,7 @@ function [Tinfo] = wc_comp_store(Tinfo)
 % INPUT: Tinfo
 % OUTPUT: file structures
 
-Tinfo.comp = ['Hs',num2str(Tinfo.Hs*100),'_Tp',num2str(Tinfo.Tp),'_tide',num2str(Tinfo.tide*100),'_spread',num2str(Tinfo.spread)];
+Tinfo.comp = ['Hs',num2str(Tinfo.Hs*100),'_Tp',num2str(Tinfo.Tp),'_tide',num2str(Tinfo.tide*100),'_spread',num2str(Tinfo.spread,'%02.f')];
 datarange = [datestr(Tinfo.cam.timevec(1)); datestr(Tinfo.cam.timevec(end))];
 Tinfo.datarange = ['time_', datarange(1,13:14), datarange(1,16:17), '-' , datarange(2,13:14), datarange(2,16:17)];
 Tinfo.procpath = [Tinfo.datapath,'data\processed\conditions\',Tinfo.comp];

@@ -145,7 +145,7 @@ elseif Tinfo.spread == 30
                 % Stereo Reconstructions (SR)
                 Tinfo.cam.tstart        = '09-01-2018-2102UTC';
                 Tinfo.cam.tdate         = '09-01-2018-2052UTC';
-                Tinfo.offsets           = [0;0]; % index offset relative to camera [in situ, lidar]
+                Tinfo.offsets           = [-182; -36]; % index offset relative to camera [in situ, lidar]
             end
         end
     else
@@ -212,7 +212,7 @@ elseif Tinfo.spread == 40
         % Stereo Reconstructions (SR)
         Tinfo.cam.tstart        = '08-30-2018-1655UTC';                   % time starting collection based on spreadsheet
         Tinfo.cam.tdate         = '08-30-2018-1634UTC';      % trial date and time - format ex: 09-01-2018-2155UTC
-        Tinfo.offsets           = [0;0]; % index offset relative to camera [in situ, lidar]
+        Tinfo.offsets           = [((0-2.17)/8)*100; 0]; % difference between lidar and cam unknown, index offset relative to camera [in situ, lidar]
     elseif Tinfo.Hs == 0.2
         Tinfo.sz.tdate          = '08-30-2018-1534UTC';         % 2119+20 min
         Tinfo.is.tdate          = '09-06-2018-2248UTC';

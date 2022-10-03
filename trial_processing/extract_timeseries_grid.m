@@ -1,4 +1,4 @@
-function extract_timeseries_grid(Tinfo)
+function extract_timeseries_grid(Tinfo,medfilt)
 % This code will extract and save time series from the camera dems and
 % lidar mat file to compute the directional spectra as an 'array'.
 % The timeseries are extracted at the gridded locations.
@@ -68,7 +68,17 @@ cam.time        = cam_time(Tinfo);
 interptseries = 0;
 ix = knnsearch(cam.x(1,:)',xcam');
 iy = knnsearch(cam.y(:,1),ycam');
-z = squeeze(cam.z(iy,ix,:));
+if medfilt == 0
+    z = squeeze(cam.z(iy,ix,:));
+elseif medfilt == 1
+    for it = 1:size(cam.z,3)
+        zt = squeeze(cam.z(:,:,it));
+        zt = smoothdata(zt,1,'movmedian',[1 1],'omitnan');
+        zt = smoothdata(zt,2,'movmedian',[1 1],'omitnan');
+        ztmed(:,:,it) = zt;
+    end
+     z = squeeze(ztmed(iy,ix,:));
+end
 
 if interptseries == 1
     for i = 1:length(ycam)
@@ -93,8 +103,13 @@ end
 XY = [X(:)'; Y(:)'];
 Z = reshape(z,size(XY,2),[])';
 
-fntime = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'.csv'];
-fnxyz = [savefolder,'cam_grid_xy_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'.csv'];
+if medfilt == 0
+    fntime = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'.csv'];
+    fnxyz = [savefolder,'cam_grid_xy_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'.csv'];
+elseif medfilt == 1
+    fntime = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'_medfiltspatial.csv'];
+    fnxyz = [savefolder,'cam_grid_xy_regx',num2str(round(xcam(1))),'-',num2str(round(xcam(end))),'_regy',num2str(round(ycam(1))),'-',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'_medfiltspatial.csv'];
+end
 
 timestr = cellstr(datestr(cam.time, 'hh:MM:ss.FFF'));
 T1 = array2table(Z);
@@ -105,10 +120,14 @@ T2 = array2table(XY);
 T2.Properties.RowNames = {'x'; 'y'};
 writetable(T2,fnxyz)
 
-if Tinfo.filt == 1
-    sname = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'_',num2str(round(xcam(end))),'_regyneg',num2str(abs(round(ycam(1)))),'_',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'_filt'];
-else
-    sname = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'_',num2str(round(xcam(end))),'_regyneg',num2str(abs(round(ycam(1)))),'_',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100)];
+if medfilt == 0
+    if Tinfo.filt == 1
+        sname = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'_',num2str(round(xcam(end))),'_regyneg',num2str(abs(round(ycam(1)))),'_',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'_filt'];
+    else
+        sname = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'_',num2str(round(xcam(end))),'_regyneg',num2str(abs(round(ycam(1)))),'_',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100)];
+    end
+elseif medfilt == 1
+    sname = [savefolder,'cam_grid_timeseries_regx',num2str(round(xcam(1))),'_',num2str(round(xcam(end))),'_regyneg',num2str(abs(round(ycam(1)))),'_',num2str(round(ycam(end))),'_dx',num2str(dx*100),'_dy',num2str(dy*100),'_filt_medfiltspatial'];
 end
 x = X;
 y = Y;

@@ -1,6 +1,5 @@
-function threshold_image_crest_length(Tinfo,thresh,minarea,samprate,pltflag)% This code will plot rectified images using code from
+function threshold_image_crest_length(Tinfo,thresh,minarea,samprate,pltflag,ixlim,iylim,idxdy,ixsel)% This code will plot rectified images using code from
 % D_gridGenExpampleRect.m in the CIRN-Quantitative-Coastal-Imaging-Toolbox
-
 
 % Set up paths and clear workspace
 addpath(genpath('C:\Users\cmbaker9\Documents\MATLAB\MTOOLS'))
@@ -8,17 +7,6 @@ addpath(genpath('E:\code\cameras'))
 addpath(genpath('E:\code\insitu'))
 addpath(genpath('E:\code\CIRN-Quantitative-Coastal-Imaging-Toolbox/X_CoreFunctions/'))
 addpath(genpath('E:\code\trc_lab_experiment\toolbox'))
-
-%%%%%%%%%%%%%%%%%%%%% USER MANIPULATED SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% thresh = 0.45;%0.7%0.6;%0.6 % image threshold
-% minarea = 30;%800 % min area of object
-% samprate = 2; %Hz
-% pltflag = 1;
-
-idxdy=0.02;
-ixlim=[25 31.5];
-iylim=[-14.5 14.5];
 
 %% STEP 1: Create paths, files and naming
 % general path and names
@@ -35,44 +23,48 @@ Tinfo.cam = TRC_camera_info(Tinfo.cam);
 %% Load data
 eval(['!mkdir ',Tinfo.figfolder,'images'])
 
-subname = '';
-load([Tinfo.savefolder,'image_stack_x',num2str(ixlim(1)),'to',num2str(round(ixlim(2))),'_res',num2str(idxdy*100),'cm',subname,'.mat']);
+odir = [Tinfo.savefolder(1:74),'orthos\','x',num2str(ixlim(1)),'to',num2str(round(ixlim(2))),'_y',num2str(round(iylim(2))),'_res',num2str(idxdy*100),'cm'];
 
-%% plot
-
-imageno =  7200:4:11999;
-ylen = [];
+imageno =  Tinfo.cam.imagestart:Tinfo.cam.Hz/samprate:(Tinfo.cam.imagestart+Tinfo.cam.numframes-1);
+yclen = [];
+cang = [];
+yalen = [];
 yim = [];
-xreg = [X(1,1) X(1,end)];
 
-remap = 1;
-if remap == 1
-    resx = 0.25;
-    resy = 0.25;
-    xreg = xreg;%[25 30];
-    xtemp = xreg(1):resx:xreg(2);
-    ytemp = Y(1,1):resy:Y(end,1);
-    y = repmat(ytemp',1,length(xtemp));
-    x = repmat(xtemp,length(ytemp),1);
-end
+xreg = ixsel;
+resx = idxdy;
+resy = idxdy;
+
+xtemp = ixlim(1):resx:ixlim(2)-resx;
+ytemp = iylim(1):resy:iylim(2)-resy;
+
+[~,idxmin] = min(abs(ixsel(1)-xtemp));
+[~,idxmax] = min(abs(ixsel(2)-xtemp));
+xtemp = xtemp(idxmin:idxmax);
+
+Y = repmat(ytemp',1,length(xtemp));
+X = repmat(xtemp,length(ytemp),1);
 
 imfreq = Tinfo.cam.Hz/samprate;
 
-figure('units','inches','position',[1 1 5 8],'color','w')
+%%
+if pltflag == 1
+	figure('units','inches','position',[1 1 5 8],'color','w')
+end
 
-for i = 1:size(IR,3)/imfreq
+for i = 1:length(imageno)  
+    imagefile = fullfile(odir,['c2_',sprintf('%05d',imageno(i)),'.tiff']);
+    IM = double(rgb2gray(imread(imagefile)))/255;
     
-    Irbw = squeeze(IR(:,:,i*imfreq));
-    if remap == 1
-        Irbw=roundgridfun(X,Y,Irbw,x,y,@mean);
-    end
-%     Irbw=roundgridfun(X(1,:),Y(:,1),Irbwo,x,y,@mean);
+    Irbw = smoothdata(IM,1,'movmedian',[3 3],'omitnan');
+    Irbw = smoothdata(Irbw,2,'movmedian',[1 1],'omitnan');
+    Irbw = Irbw(:,idxmin:idxmax);
     
-    
-    % apply the threshold to 
+    % apply the threshold to
     Ib   = imbinarize(Irbw,thresh);
    
     Iob = bwareaopen(Ib,minarea,8);
+    Ithresh(:,:,i) = Iob;
 %     Iob = bwareafilt(Iob,5);
     [L,n] = bwlabel(Iob);
     
@@ -80,21 +72,20 @@ for i = 1:size(IR,3)/imfreq
     for ni = 1:n
         obtemp = 0.*Iob;
         obtemp(L==ni)=1;
-        props = regionprops(obtemp, 'BoundingBox');
-        shapeheight(ni) = props.BoundingBox(4)*resy;
+        props = regionprops(obtemp, 'BoundingBox', 'MajorAxisLength', 'Orientation');
+        aedge(1)    = (props.BoundingBox(2)*resy)+Y(1);
+        aedge(2)    = aedge(1)+(props.BoundingBox(4)*resy);
+        yalen        = [yalen; aedge];
+        yclen       = [yclen; props.MajorAxisLength*resy];
+        cang        = [cang; props.Orientation];
+        yim         = [yim imageno(i)];
     end
-    ylen = [ylen shapeheight];
-    yim = [yim ones(1,n)*imageno(i)];
-    
+  
     if pltflag == 1
-        
+%         figure('units','inches','position',[1 1 5 8],'color','w')
         % plot
         ax2 = axes('Position',[0.15 0.1 0.4 0.8]);
-        if remap == 1
-            pcolor(x,y,Irbw)
-        else
-            pcolor(X,Y,Irbw)
-        end        
+        pcolor(X,Y,Irbw)       
         %     imagesc(nu,nv,Irbw)
         hold on
         shading interp
@@ -115,11 +106,7 @@ for i = 1:size(IR,3)/imfreq
         xlabel('$x$ (m)','interpreter','latex','fontsize',20);
         
         ax3 = axes('Position',[0.46 0.1 0.45 0.8]);
-        if remap == 1
-            pcolor(x,y,double(Iob))
-        else
-            pcolor(X,Y,double(Iob))
-        end  
+        pcolor(X,Y,double(Iob)) 
         hold on
         shading faceted
         colormap('gray');
@@ -129,7 +116,7 @@ for i = 1:size(IR,3)/imfreq
         %     grid on
         box on
         shading interp
-        xlim(ixlim)
+        xlim(ixsel)
         ylim(iylim)
         h1=gca;
 %         set(h1,'ydir','reverse')
@@ -148,16 +135,30 @@ for i = 1:size(IR,3)/imfreq
         pause(0.1)
         clf
     end
-    
+    clear IM Irbw
 end
 
 figure;
-histogram(ylen)
-sname = 'histogram_image';
+histogram(abs(yalen(:,1)-yalen(:,2)))
+sname = 'histogram_image_alongshore';
 print([Tinfo.figfolder,sname],'-dpng')
 
-subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2)))];
-psname = [Tinfo.savefolder,'ylen_thresh',num2str(thresh*100),'_minarea',num2str(minarea),subname,'.mat'];
-eval(['save -v7.3 ',psname,' ylen',' yim',' resx',' resy',' xreg']);
+figure;
+histogram(yclen)
+sname = 'histogram_image_crest';
+print([Tinfo.figfolder,sname],'-dpng')
+
+figure;
+histogram(cang)
+sname = 'histogram_image_orient';
+print([Tinfo.figfolder,sname],'-dpng')
+
+subname = ['_x',num2str(round(xreg(1))),'to',num2str(round(xreg(2))),'_ycrest'];
+psname = [Tinfo.savefolder,'ylen_thresh',num2str(thresh*100),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'.mat'];
+eval(['save -v7.3 ',psname,' yalen',' yim',' resx',' resy',' xreg',' yclen',' cang']);
+% display('Not saving ylen')
+
+psname = [Tinfo.savefolder,'ylen_thresh',num2str(thresh*100),'_minarea',num2str(minarea),'_samprate',num2str(samprate),subname,'_selectedregions.mat'];
+eval(['save -v7.3 ',psname,' X',' Y',' Ithresh']);
 
 end

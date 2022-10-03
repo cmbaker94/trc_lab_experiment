@@ -79,12 +79,12 @@ for iarray = 1:2
         lidar.See(:,lidar.x<24,:) = NaN;
         
         % Stereo
-        cam.Hs(cam.y(:,1)<-12.9,:)=NaN;
-        cam.Hs(cam.y(:,1)>13,:)=NaN;
-        cam.Hs(:,cam.x(1,:)<28.35) = NaN;
-        cam.See(cam.y(:,1)<-12.9,:,:)=NaN;
-        cam.See(cam.y(:,1)>13,:,:)=NaN;
-        cam.See(:,cam.x(1,:)<28.35,:) = NaN;
+%         cam.Hs(cam.y(:,1)<-12.9,:)=NaN;
+%         cam.Hs(cam.y(:,1)>13,:)=NaN;
+%         cam.Hs(:,cam.x(1,:)<28.35) = NaN;
+%         cam.See(cam.y(:,1)<-12.9,:,:)=NaN;
+%         cam.See(cam.y(:,1)>13,:,:)=NaN;
+%         cam.See(:,cam.x(1,:)<28.35,:) = NaN;
         
         % avg and stdev
         lidar.Hs_yavg = nanmean(lidar.Hs,1);
@@ -366,10 +366,10 @@ print(Sname1,'-dpng')
 
 %% cam
 camplot_Hs = cam.Hs';
-camplot_Hs(cam.x(1,:)<28.2,:) = NaN;
+% camplot_Hs(cam.x(1,:)<28.2,:) = NaN;
 
 figure('units','inches','position',[1 1 10 6],'Color','w');
-ax1 = axes('Position',[0.12 0.15 0.8 0.77]);
+ax1 = axes('Position',[0.12 0.15 0.72 0.77]);
 pcolorjw(cam.y,cam.x,camplot_Hs);%,100,'linestyle','none')%.*fliplr(beach2));
 hold on
 for i = 1:length(sz.Hs)
@@ -386,15 +386,15 @@ axis equal
 shading flat
 grid on
 ylim([18.5 35.01])
-xlim([-12 12])
+xlim([-14 14])
 %     text(27,17,'$H_s~(\mathrm{m})$','interpreter','latex','fontsize',20);
 colormap(cmocean('thermal'));
 %     h2 = colorbar('eastoutside');
 cb = colorbar('Position', [0.885 0.15 0.035 0.67])
 cb.Ruler.MinorTick = 'on';
-text(12.8,19.3,'$H_s~(\mathrm{m})$','interpreter','latex','fontsize',20);
+text(14,19.3,'$H_s~(\mathrm{m})$','interpreter','latex','fontsize',20);
 %     ylabel(h2,'$H_s~(\mathrm{m})$','interpreter','latex','fontsize',20);
-caxis([0 0.21])
+caxis([0 0.3])
 h1=gca;
 set(h1,'tickdir','out','xminortick','on','yminortick','on');
 set(h1,'ticklength',2*get(h1,'ticklength'));
